@@ -4,14 +4,22 @@
 #include <ArduinoJson.h>
 
 const char* ssid = "OPPO Reno6";
-const char* password = "12345678";
+const char* password = "technotix";
 
 WebServer server(80);
 WebSocketsServer ws(81);
 
 String frontLeft = "0", frontRight = "0", rearLeft = "0", rearRight = "0";
 String encoder1 = "0", encoder2 = "0", encoder3 = "0";
+String robotX = "0", robotY = "0", robotRotation = "0";
+String ballState = "0", flapsOpen = "0";
 String isOdriveShooting = "0";
+String odriveVbusVoltage = "0", odriveVelocity0 = "0", odriveVelocity1 = "0";
+String odriveCurrent0 = "0", odriveCurrent1 = "0";
+String odriveError0 = "0", odriveError1 = "0";
+String odriveAxisError0 = "0", odriveAxisError1 = "0";
+String odriveEncoderError0 = "0", odriveEncoderError1 = "0";
+String odriveControllerError0 = "0", odriveControllerError1 = "0";
 unsigned long lastUpdate = 0;
 
 String getPage() {
@@ -30,7 +38,11 @@ String getPage() {
   h += ".status-section{background:rgba(248,249,250,0.8);border-left:4px solid #e74c3c}";
   h += ".shooting-active{background:#d4edda;border:2px solid #28a745;color:#155724}";
   h += ".shooting-inactive{background:#f8d7da;border:2px solid #dc3545;color:#721c24}";
+  h += ".ball-idle{background:#f8f9fa;border:2px solid #6c757d;color:#495057}";
+  h += ".ball-shot{background:#fff3cd;border:2px solid #ffc107;color:#856404}";
+  h += ".ball-waiting{background:#cce5ff;border:2px solid #007bff;color:#004085}";
   h += ".status{text-align:center;color:#6c757d;font-size:14px;margin-top:20px;padding:10px;background:#f8f9fa;border-radius:6px}";
+  h += ".error-ok{color:#28a745}.error-warning{color:#ffc107}.error-critical{color:#dc3545}";
   h += "</style></head><body>";
   h += "<div class='container'><h1>Robot Dashboard</h1>";
   h += "<div class='section'><h2>Motors</h2><div class='grid'>";
@@ -44,8 +56,26 @@ String getPage() {
   h += "<div class='item'><div class='label'>Encoder 2</div><div class='value' id='e2'>0</div><div class='unit'>cm</div></div>";
   h += "<div class='item'><div class='label'>Encoder 3</div><div class='value' id='e3'>0</div><div class='unit'>cm</div></div>";
   h += "</div></div>";
-  h += "<div class='section status-section'><h2>Shooting Status</h2>";
+  h += "<div class='section'><h2>ODrive Diagnostics</h2><div class='grid'>";
+  h += "<div class='item'><div class='label'>Vbus Voltage</div><div class='value' id='vbus'>0</div><div class='unit'>V</div></div>";
+  h += "<div class='item'><div class='label'>Motor 0 Velocity</div><div class='value' id='vel0'>0</div><div class='unit'>rev/s</div></div>";
+  h += "<div class='item'><div class='label'>Motor 1 Velocity</div><div class='value' id='vel1'>0</div><div class='unit'>rev/s</div></div>";
+  h += "<div class='item'><div class='label'>Motor 0 Current</div><div class='value' id='cur0'>0</div><div class='unit'>A</div></div>";
+  h += "<div class='item'><div class='label'>Motor 1 Current</div><div class='value' id='cur1'>0</div><div class='unit'>A</div></div>";
+  h += "</div></div>";
+  h += "<div class='section'><h2>ODrive Errors</h2><div class='grid'>";
+  h += "<div class='item'><div class='label'>Motor 0 Axis Error</div><div class='value' id='axerr0'>0</div></div>";
+  h += "<div class='item'><div class='label'>Motor 1 Axis Error</div><div class='value' id='axerr1'>0</div></div>";
+  h += "<div class='item'><div class='label'>Motor 0 Encoder Error</div><div class='value' id='encerr0'>0</div></div>";
+  h += "<div class='item'><div class='label'>Motor 1 Encoder Error</div><div class='value' id='encerr1'>0</div></div>";
+  h += "<div class='item'><div class='label'>Motor 0 Controller Error</div><div class='value' id='conerr0'>0</div></div>";
+  h += "<div class='item'><div class='label'>Motor 1 Controller Error</div><div class='value' id='conerr1'>0</div></div>";
+  h += "</div></div>";
+  h += "<div class='section'><h2>System Status</h2><div class='grid'>";
   h += "<div class='item' id='shoot-status'><div class='label'>ODrive Shooting</div><div class='value' id='shooting'>INACTIVE</div></div>";
+  h += "<div class='item' id='ball-status'><div class='label'>Ball State</div><div class='value' id='ball'>0</div></div>";
+  h += "<div class='item' id='flaps-status'><div class='label'>Flaps</div><div class='value' id='flaps'>CLOSED</div></div>";
+  h += "</div>";
   h += "</div>";
   h += "<div class='status'>Last Update: <span id='lu'>No data</span></div></div>";
   h += "<script>";
@@ -59,6 +89,24 @@ String getPage() {
   h += "document.getElementById('e1').innerText=d.encoder1;";
   h += "document.getElementById('e2').innerText=d.encoder2;";
   h += "document.getElementById('e3').innerText=d.encoder3;";
+  h += "document.getElementById('vbus').innerText=d.odriveVbusVoltage;";
+  h += "document.getElementById('vel0').innerText=d.odriveVelocity0;";
+  h += "document.getElementById('vel1').innerText=d.odriveVelocity1;";
+  h += "document.getElementById('cur0').innerText=d.odriveCurrent0;";
+  h += "document.getElementById('cur1').innerText=d.odriveCurrent1;";
+  h += "const axerr0El=document.getElementById('axerr0');axerr0El.innerText=d.odriveAxisError0;axerr0El.className=d.odriveAxisError0==='0'?'value error-ok':'value error-critical';";
+  h += "const axerr1El=document.getElementById('axerr1');axerr1El.innerText=d.odriveAxisError1;axerr1El.className=d.odriveAxisError1==='0'?'value error-ok':'value error-critical';";
+  h += "const encerr0El=document.getElementById('encerr0');encerr0El.innerText=d.odriveEncoderError0;encerr0El.className=d.odriveEncoderError0==='0'?'value error-ok':'value error-critical';";
+  h += "const encerr1El=document.getElementById('encerr1');encerr1El.innerText=d.odriveEncoderError1;encerr1El.className=d.odriveEncoderError1==='0'?'value error-ok':'value error-critical';";
+  h += "const conerr0El=document.getElementById('conerr0');conerr0El.innerText=d.odriveControllerError0;conerr0El.className=d.odriveControllerError0==='0'?'value error-ok':'value error-critical';";
+  h += "const conerr1El=document.getElementById('conerr1');conerr1El.innerText=d.odriveControllerError1;conerr1El.className=d.odriveControllerError1==='0'?'value error-ok':'value error-critical';";
+  h += "const ballEl=document.getElementById('ball');const ballStatus=document.getElementById('ball-status');";
+  h += "if(d.ballState==='0'){ballEl.innerText='BALL NOT SHOT';ballStatus.className='item ball-idle'}";
+  h += "else if(d.ballState==='1'){ballEl.innerText='SHOT - WAITING TO LEAVE';ballStatus.className='item ball-shot'}";
+  h += "else if(d.ballState==='2'){ballEl.innerText='LEFT - WAITING RETURN';ballStatus.className='item ball-waiting'}";
+  h += "else{ballEl.innerText='STATE '+d.ballState;ballStatus.className='item ball-idle'}";
+  h += "const flapsEl=document.getElementById('flaps');const flapsStatus=document.getElementById('flaps-status');";
+  h += "if(d.flapsOpen==='1'){flapsEl.innerText='OPEN';flapsStatus.className='item shooting-active'}else{flapsEl.innerText='CLOSED';flapsStatus.className='item shooting-inactive'}";
   h += "const shootEl=document.getElementById('shooting');const shootStatus=document.getElementById('shoot-status');";
   h += "if(d.isOdriveShooting==='1'){shootEl.innerText='ACTIVE';shootStatus.className='item shooting-active'}else{shootEl.innerText='INACTIVE';shootStatus.className='item shooting-inactive'}";
   h += "document.getElementById('lu').innerText=d.lastUpdate};";
@@ -68,7 +116,7 @@ String getPage() {
 }
 
 void sendStatus(uint8_t id) {
-  StaticJsonDocument<300> j;
+  StaticJsonDocument<1200> j;
   j["frontLeft"] = frontLeft;
   j["frontRight"] = frontRight;
   j["rearLeft"] = rearLeft;
@@ -76,7 +124,25 @@ void sendStatus(uint8_t id) {
   j["encoder1"] = encoder1;
   j["encoder2"] = encoder2;
   j["encoder3"] = encoder3;
+  j["robotX"] = robotX;
+  j["robotY"] = robotY;
+  j["robotRotation"] = robotRotation;
+  j["ballState"] = ballState;
+  j["flapsOpen"] = flapsOpen;
   j["isOdriveShooting"] = isOdriveShooting;
+  j["odriveVbusVoltage"] = odriveVbusVoltage;
+  j["odriveVelocity0"] = odriveVelocity0;
+  j["odriveVelocity1"] = odriveVelocity1;
+  j["odriveCurrent0"] = odriveCurrent0;
+  j["odriveCurrent1"] = odriveCurrent1;
+  j["odriveError0"] = odriveError0;
+  j["odriveError1"] = odriveError1;
+  j["odriveAxisError0"] = odriveAxisError0;
+  j["odriveAxisError1"] = odriveAxisError1;
+  j["odriveEncoderError0"] = odriveEncoderError0;
+  j["odriveEncoderError1"] = odriveEncoderError1;
+  j["odriveControllerError0"] = odriveControllerError0;
+  j["odriveControllerError1"] = odriveControllerError1;
   j["lastUpdate"] = String((millis() - lastUpdate) / 1000) + "s ago";
   String out;
   serializeJson(j, out);
@@ -127,8 +193,8 @@ void loop() {
     d.trim();
     if (d.startsWith("<") && d.endsWith(">")) {
       d = d.substring(1, d.length() - 1);
-      int i[7], p = 0;
-      for (int k = 0; k < 7; k++) {
+      int i[20], p = 0;
+      for (int k = 0; k < 20; k++) {
         i[k] = d.indexOf(',', p);
         p = i[k] + 1;
       }
@@ -140,7 +206,20 @@ void loop() {
       encoder1 = d.substring(i[3] + 1, i[4]);
       encoder2 = d.substring(i[4] + 1, i[5]);
       encoder3 = d.substring(i[5] + 1, i[6]);
-      isOdriveShooting = d.substring(i[6] + 1);
+      isOdriveShooting = d.substring(i[6] + 1, i[7]);
+      ballState = d.substring(i[7] + 1, i[8]);
+      flapsOpen = d.substring(i[8] + 1, i[9]);
+      odriveVbusVoltage = d.substring(i[9] + 1, i[10]);
+      odriveVelocity0 = d.substring(i[10] + 1, i[11]);
+      odriveVelocity1 = d.substring(i[11] + 1, i[12]);
+      odriveCurrent0 = d.substring(i[12] + 1, i[13]);
+      odriveCurrent1 = d.substring(i[13] + 1, i[14]);
+      odriveAxisError0 = d.substring(i[14] + 1, i[15]);
+      odriveAxisError1 = d.substring(i[15] + 1, i[16]);
+      odriveEncoderError0 = d.substring(i[16] + 1, i[17]);
+      odriveEncoderError1 = d.substring(i[17] + 1, i[18]);
+      odriveControllerError0 = d.substring(i[18] + 1, i[19]);
+      odriveControllerError1 = d.substring(i[19] + 1);
       lastUpdate = millis();
 
       for (uint8_t c = 0; c < ws.connectedClients(); c++) {
