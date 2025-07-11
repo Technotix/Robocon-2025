@@ -454,13 +454,20 @@ void intake()
   {
     if (motorDribble != 0)
     {
-      motorDribble += 2;
+      if (motorDribble > 0)
+      {
+        motorDribble -= 2;
+      }
+      else
+      {
+        motorDribble += 2;
+      }
       updateMotors();
       return;
     }
     if (motorPulley < 100)
     {
-      motorPulley += 20;
+      motorPulley += 10;
       updateMotors();
       return;
     }
@@ -685,53 +692,53 @@ void printStatus()
     }
   }
 
-  //if (millis() - lastTime >= 100)
+  // if (millis() - lastTime >= 100)
   //{
-  //  loggingSerial.print("<");
-  //  loggingSerial.print(motorFrontLeft);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(motorFrontRight);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(motorRearLeft);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(motorRearRight);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(Vw_actual, 2);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(Vx_actual, 2);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(Vy_actual, 2);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveShooting ? "1" : "0");
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(ballState);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(flapsOpen ? "1" : "0");
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveVbusVoltage, 1);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveVelocity[0], 1);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveVelocity[1], 1);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveCurrent[0], 1);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveCurrent[1], 1);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveMotorError[0]);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveMotorError[1]);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveEncoderError[0]);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveEncoderError[1]);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveControllerError[0]);
-  //  loggingSerial.print(",");
-  //  loggingSerial.print(odriveControllerError[1]);
-  //  loggingSerial.println(">");
-  //  lastTime = millis();
-  //}
+  //   loggingSerial.print("<");
+  //   loggingSerial.print(motorFrontLeft);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(motorFrontRight);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(motorRearLeft);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(motorRearRight);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(Vw_actual, 2);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(Vx_actual, 2);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(Vy_actual, 2);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveShooting ? "1" : "0");
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(ballState);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(flapsOpen ? "1" : "0");
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveVbusVoltage, 1);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveVelocity[0], 1);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveVelocity[1], 1);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveCurrent[0], 1);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveCurrent[1], 1);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveMotorError[0]);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveMotorError[1]);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveEncoderError[0]);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveEncoderError[1]);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveControllerError[0]);
+  //   loggingSerial.print(",");
+  //   loggingSerial.print(odriveControllerError[1]);
+  //   loggingSerial.println(">");
+  //   lastTime = millis();
+  // }
 
   // Serial.print("  Motors [FL:");
   // Serial.print(motorFrontLeft);
