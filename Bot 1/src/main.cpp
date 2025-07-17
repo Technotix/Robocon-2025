@@ -48,6 +48,9 @@
 #define ENCODER_3_A 20
 #define ENCODER_3_B 21
 
+// Kill Switch Pulley
+#define KILL_SWITCH_PULLEY 49
+
 // Encoder Measurement Definitions (mm)
 #define ENCODER_PPR 2400.0
 #define WHEEL_CIRCUMFERENCE 0.1884
@@ -132,6 +135,9 @@ void setup()
   // Linear Actuator Setup
   pinMode(LINEAR_PWM, OUTPUT);
   pinMode(LINEAR_DIR, OUTPUT);
+
+  // Kill Switch Setup
+  pinMode(KILL_SWITCH_PULLEY, INPUT_PULLUP);
 
   // Stop All Motors
   updateWheelDrive(0, 0, 0);
@@ -325,6 +331,11 @@ void updateMotors()
 {
   digitalWrite(LINEAR_DIR, motorLinear < 0);
   analogWrite(LINEAR_PWM, abs(motorLinear));
+
+  if (digitalRead(KILL_SWITCH_PULLEY) == LOW && motorPulley > 0)
+  {
+    motorPulley = 0;
+  }
 
   dpMotors.control(motorDribble, motorPulley);
 }
